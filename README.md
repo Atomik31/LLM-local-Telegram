@@ -18,13 +18,13 @@
 1. Ouvre le fichier `.env`
 2. Remplace `YOUR_BOT_TOKEN` par ton vrai token Telegram
 3. Vérifie que `LM_STUDIO_URL` = `http://localhost:1234/v1/chat/completions`
-4. Vérifie que `MODEL_NAME` correspond à ton modèle dans LM Studio
+4. Vérifie que `MODEL_NAME` = `mistral-7b-instruct-v0.3`
 
 Exemple de .env complété :
 ```
 TELEGRAM_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
 LM_STUDIO_URL=http://localhost:1234/v1/chat/completions
-MODEL_NAME=mistral-7b-0.3
+MODEL_NAME=mistral-7b-instruct-v0.3
 ```
 
 ### 3. Installer les dépendances
@@ -34,7 +34,7 @@ pip install -r requirements.txt
 
 ### 4. Démarrer LM Studio
 - Ouvre LM Studio
-- Charge le modèle "Mistral 7B 0.3"
+- Charge le modèle "Mistral 7B Instruct v0.3"
 - Lance le serveur local (doit être sur port 1234)
 - Attends que le modèle soit chargé
 
@@ -43,13 +43,34 @@ pip install -r requirements.txt
 python bot.py
 ```
 
-Tu devrais voir dans le terminal : "Bot démarré et en attente de messages..."
+Tu devrais voir dans le terminal : "Bot démarré..."
 
 ### 6. Tester le bot
 1. Ouvre Telegram et recherche ton bot par son nom
 2. Envoie `/start`
-3. Envoie un message (ex: "Recommande-moi un produit")
-4. Le bot doit répondre via Mistral 7B
+3. Envoie un message (ex: "Comment faire une boucle en Python?")
+4. Le bot doit répondre en tant qu'expert technique
+
+## Fonctionnalités
+
+- **Conversation persistante** : Le bot se souvient de l'historique (max 20 derniers messages)
+- **Historique sauvegardé** : Tous les messages sont sauvegardés dans `history.json`
+- **Multi-utilisateurs** : Chaque utilisateur a son propre historique isolé
+- **Réinitialisation** : `/start` réinitialise la conversation
+
+## Historique des conversations
+
+Le bot sauvegarde automatiquement toutes les conversations dans `history.json`. Tu peux consulter cet historique directement.
+
+Structure du fichier :
+```json
+{
+  "user_id": [
+    {"role": "user", "content": "..."},
+    {"role": "assistant", "content": "..."}
+  ]
+}
+```
 
 ## Dépannage
 
@@ -59,33 +80,32 @@ Tu devrais voir dans le terminal : "Bot démarré et en attente de messages..."
 - Vérifie le token Telegram (pas d'espaces)
 - Vérifie l'URL dans .env
 
+**Erreur 400**
+- Vérifie que le `MODEL_NAME` dans .env correspond exactement au modèle chargé dans LM Studio
+- Vérifie que ton prompt/message n'est pas trop long (max 4096 tokens)
+
 **Erreur "Connection refused"**
 - LM Studio n'est pas lancé
 - Ou il ne tourne pas sur le port 1234
 - Relance LM Studio
 
 **Le modèle ne correspond pas**
-- Dans LM Studio, clique sur le modèle pour voir son nom exact
+- Va sur `http://localhost:1234/v1/models` pour voir le nom exact du modèle
 - Mets à jour `MODEL_NAME` dans `.env`
 
 ## Personnaliser le bot
 
-Tu peux modifier le rôle du bot en changeant `SYSTEM_PROMPT` dans `bot.py`
+Modifie `SYSTEM_PROMPT` dans `bot.py` pour changer le rôle du bot.
 
-Exemples :
-
-**Support client :**
+Exemple actuel (Expert Python/ML/IA) :
 ```python
-SYSTEM_PROMPT = """Tu es un agent de support client professionnel.
-Aide les utilisateurs à résoudre leurs problèmes rapidement.
-Sois empathique et propose des solutions concrètes."""
+SYSTEM_PROMPT = """Tu es un assistant expert en code python, machine learning, deep learning et intelligence artificielle au global.
+Tu aides les utilisateurs avec leurs questions techniques en apportant des réponses claires, précises et simples.
+Proposes toujours un code simple et compréhensible. 
+Sois concis dans tes réponses (max 150 mots)."""
 ```
 
-**Assistant général :**
-```python
-SYSTEM_PROMPT = """Tu es un assistant IA utile et amical.
-Réponds aux questions de manière claire et concise."""
-```
+Tu peux le changer pour n'importe quel autre rôle.
 
 ## Lancer le bot en arrière-plan (Windows)
 
