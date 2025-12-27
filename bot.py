@@ -16,18 +16,32 @@ Tu dois être amical, utile et convaincant.
 Aide les clients à trouver les produits qu'ils cherchent, réponds à leurs questions sur les produits et propose des articles similaires.
 Sois concis dans tes réponses (max 150 mots)."""
 
+# Stockage de l'historique des conversations par user_id
+conversation_history = {}
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    # Réinitialiser l'historique pour cet utilisateur
+    conversation_history[user_id] = []
     await update.message.reply_text("Bienvenue! Je suis l'assistant de vente. Comment puis-je t'aider?")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
     user_message = update.message.text
     
-    # Construction du payload avec prompt système
+    # Initialiser l'historique si l'utilisateur n'existe pas
+    if user_id not in conversation_history:
+        conversation_history[user_id] = []
+    
+    # Ajouter le message de l'utilisateur à l'historique
+    conversation_history[user_id].append({"role": "user", "content": user_message})
+    
+    # Construction du payload avec l'historique complet
     payload = {
         "model": MODEL_NAME,
         "messages": [
-            {"role": "user", "content": f"{SYSTEM_PROMPT}\n\n{user_message}"}
-        ],
+            {"role": "user", "content": SYSTEM_PROMPT}
+        ] + conversation_history[user_id],
         "temperature": 0.7,
         "max_tokens": 512
     }
@@ -37,6 +51,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response.raise_for_status()
         
         ai_response = response.json()["choices"][0]["message"]["content"]
+        
+        # Ajouter la réponse du bot à l'historique
+        conversation_history[user_id].append({"role": "assistant", "content": ai_response})
+        
+        # Garder seulement les 20 derniers messages pour éviter de surcharger
+        if len(conversation_history[user_id]) > 20:
+            conversation_history[user_id] = conversation_history[user_id][-20:]
+        
         await update.message.reply_text(ai_response)
         
     except requests.exceptions.RequestException as e:
